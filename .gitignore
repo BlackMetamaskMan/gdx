@@ -3,7 +3,7 @@
 __pycache__/
 *.egg-info/
 .pytest_cache/
-*starter.py
+*starter*.py
 
 
 env/
