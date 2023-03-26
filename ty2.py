@@ -35,6 +35,7 @@ class T2MakeOTHER(threading.Thread):
         self.order_book=None
         self.price_key_dict={}
         self.last_unit_float=None
+        self.last_smallunit_float=None
         self.whats_like_nofloat=whats_like_nofloat
 
         self.total_eth=total_eth
@@ -61,21 +62,21 @@ class T2MakeOTHER(threading.Thread):
     def do_maker_make(self):
 
         try:
-            logging.info('do_maker_make,=== past float:%s,setting_nofloat:%s'%(self.last_unit_float,self.whats_like_nofloat))
-            if self.last_unit_float!=None and self.last_unit_float>self.whats_like_nofloat:
-                return
-            else:
+            logging.info('do_maker_make,=== past float:%s,small_float:%s,setting_nofloat:%s'%(self.last_unit_float,self.last_smallunit_float,self.whats_like_nofloat))
+            if None not in [self.last_unit_float,self.last_smallunit_float] and self.last_unit_float>self.whats_like_nofloat\
+                    and self.last_smallunit_float<self.whats_like_nofloat/2.5:
                 return
 
+
             d5c=d5_web.D5()
-            order_list=d5c.get_maker_list(d5execu.GRID_ADDRESS)
+            order_list=d5c.get_maker_list(self.g.public_key)
             logging.info('do_maker_make,=== Present order_list:%s'%(order_list))
             amount_wei_WETH = self.g.WETH_balance()
 
             eth_balance = self.g.w3.from_wei(amount_wei_WETH, 'ether')
             ceach_eth=self.__get_each_eth_amount()
 
-            if eth_balance>self.eth_min_amount*0.5:
+            if eth_balance>self.eth_min_amount*0.8:
                 make_eth=min(float(eth_balance)*0.95,ceach_eth)
                 split_scope=self.__get_split_buy_scops()
                 logging.info('eth_min_amount:%s,eth_balance:%s' % (self.eth_min_amount, eth_balance))
@@ -89,6 +90,7 @@ class T2MakeOTHER(threading.Thread):
                                 print('Make boundaryid:%s'%(sigle_scope[0]))
                                 order_id = self.g.do_maker(int(sigle_scope[0]), Web3.to_wei(make_eth, 'ether'), False)
                                 logging.info('Make Order,id:%s'%(order_id))
+
                                 time.sleep(SLEEP_SEC)
                                 self.last_maker_time=time.time()
                             except:
@@ -113,6 +115,7 @@ class T2MakeOTHER(threading.Thread):
                             order_id = int(order_item.get('order_id'))
                             logging.info('Claim Order id:%s' % (order_id))
                             a, b = self.g.settle_maker(order_id)
+                            # time.sleep(SLEEP_SEC)
                         except:
                             logging.info('Settle error.')
         except:
@@ -138,23 +141,34 @@ class T2MakeOTHER(threading.Thread):
 
         while True:
 
-            d5c=d5_web.D5()
-            candle_data=d5c.get_his_candal_data(d5execu.GRID_ADDRESS,candle_count=COUNT_K,candle_type=UNIT_K)
-            if candle_data!=None:
-                total_l,total_h=0,0
-                for item in candle_data.get('l'):
-                    item_value=float(item)
-                    total_l=total_l+item_value
-                for item in candle_data.get('h'):
-                    item_value=float(item)
-                    total_h=total_h+item_value
+            last_unit_float=self.__get_float(COUNT_K,UNIT_K)
+            if last_unit_float!=None:
+                print('last_unit_float:%s'%(last_unit_float))
+                self.last_unit_float=last_unit_float
 
-                flot=(total_h-total_l)/total_h
-                print('last_unit_float:%s'%(flot))
-                self.last_unit_float=flot
+            last_smallunit_float=self.__get_float(3,5)
+            if last_smallunit_float!=None:
+                print('last_smallunit_float:%s'%(last_smallunit_float))
+                self.last_smallunit_float=last_smallunit_float
 
-            time.sleep(60)
+            time.sleep(30)
 
+
+    def __get_float(self,candle_count,candle_type):
+
+        d5c = d5_web.D5()
+        candle_data = d5c.get_his_candal_data(d5execu.GRID_ADDRESS, candle_count=candle_count, candle_type=candle_type)
+        if candle_data != None:
+            total_l, total_h = 0, 0
+            for item in candle_data.get('l'):
+                item_value = float(item)
+                total_l = total_l + item_value
+            for item in candle_data.get('h'):
+                item_value = float(item)
+                total_h = total_h + item_value
+
+            flot = (total_h - total_l) / total_h
+            return flot
 
     def update_ob_tsk(self):
 
@@ -263,7 +277,7 @@ class T2MakeOTHER(threading.Thread):
                 scops.append(iscope_sub)
 
             if len(scops)>0:
-                scops[0]=[current_boundary]+scops[0]
+                scops[0]=[lows[0].get('origin_boundary')+5]+scops[0]
         return scops
 
     def __if_already_in_scope(self,order_list,scope):
