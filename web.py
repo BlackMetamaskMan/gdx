@@ -49,6 +49,51 @@ class D5:
         except Exception:
             print('get_his_volume_data Error happened')
 
+    def get_his_candal_data(self,add,
+                            candle_count=3,
+                            candle_type=15
+                            ):
+        '''
+            {
+                s: "ok",
+                t: [
+                1679383800,
+                1679384700
+                ],
+                c: [
+                "0.0006617437778333914933749327",
+                "0.0006617613809335494229151629"
+                ],
+                o: [
+                "0.0006611482909166340437370220",
+                "0.0006617436683946330529306027"
+                ],
+                h: [
+                "0.0006617437778333914933749327",
+                "0.0006618069155628415755526682"
+                ],
+                l: [
+                "0.0006611482909166340437370220",
+                "0.0006615716827380949982740973"
+                ],
+                v: [
+                "415605.858136278240387213",
+                "392387.359971520282910864"
+                ]
+            }
+        '''
+        to_time=int(time.time())-5
+        from_time=to_time-(candle_count+1)*candle_type*60
+        crawl_url='https://api-arbitrum.d5.xyz/v1/udf/history?symbol=GRID-%s&resolution=%s&from=%s&to=%s&countback=%s'%(add,candle_type,from_time,to_time,candle_count)
+        try:
+            with requests.get(url=crawl_url, timeout=10, stream=True) as req:
+                res_data=req.json()
+                if res_data.get('s')=='ok':
+                    return res_data
+        except Exception:
+            print('get_his_candal_data Error happened')
+#https://api-arbitrum.d5.xyz/v1/udf/history?symbol=GRID-0x8Eb76679F7eD2a2Ec0145A87fE35d67ff6e19aa6&resolution=30&from=1679762483&to=1679798483&countback=2
+#https://api-arbitrum.d5.xyz/v1/udf/history?symbol=GRID-0x7c063BA4799A7479a8104a41aef1e0A6bD0ff186&resolution=30&from=1679794814&to=1679800214&countback=2
     def get_ob_data(self,add):
         '''
         https://api-arbitrum.d5.xyz/v1/market/order_books/0x8Eb76679F7eD2a2Ec0145A87fE35d67ff6e19aa6

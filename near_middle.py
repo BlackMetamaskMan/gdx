@@ -194,7 +194,7 @@ class DingPkMake(threading.Thread):
         while True:
 
             d5c=d5_web.D5()
-            volumes=d5c.get_his_volume_data(self.g.public_key,candle_count=3,candle_type=60)
+            volumes=d5c.get_his_volume_data(d5execu.GRID_ADDRESS,candle_count=3,candle_type=60)
             if volumes!=None:
                 total=0
                 for item in volumes:
@@ -212,7 +212,7 @@ class DingPkMake(threading.Thread):
 
         while True:
             d5c=d5_web.D5()
-            data=d5c.get_ob_data(self.g.public_key)
+            data=d5c.get_ob_data(d5execu.GRID_ADDRESS)
             if data != None:
                 current = data.get('current')
                 highs = data.get('highs')
