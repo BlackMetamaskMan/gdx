@@ -5,7 +5,7 @@ __pycache__/
 .pytest_cache/
 *starter*.py
 *local*.py
-
+*outside*
 
 env/
 venv/
